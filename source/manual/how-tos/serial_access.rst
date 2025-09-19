@@ -22,15 +22,56 @@ please refer your server manual):
 * a null modem cable
 * if you don't have an RS232 port on your computer, you need an USB to RS232 converter
 
---------------------------------
-Connecting to the serial console
---------------------------------
+------------------------------
+Configuring the serial console
+------------------------------
 
 If you already installed OPNsense via a non-serial installer, serial access needs to be turned on. To do this, open
 the web interface, navigate to :menuselection:`System --> Settings --> Administration`, scroll down to 'Console' and set the primary or
 secondary console to 'Serial console'. Note: this is **only** necessary if you already installed OPNsense, and did not
 use the serial installer to do so. In all other cases (accessing BIOS, running the serial installer, connecting to an
 installation that was done via serial), serial access is already available.
+
+By default OPNsense will use the first serial port detected by the system and set it to 15200 baud. If you need to use a different serial port or speed you can use tunables to achieve this.
+
+.. Tip::
+  Use ``# dmesg | grep uart`` to find the serial ports in your system and their addresses, and ``# grep ^3wire /etc/gettytab`` to find the supported speeds.
+
+  To test the serial port without rebooting, connect to it and start a getty (adapt the speed and tty name to your hardware).
+
+   :code:`# /usr/libexec/getty 3wire.19200 ttyu1`
+
+  You should see a login prompt and be able to log in. To try a different speed or port kill the getty with:
+
+   :code:`# pkill -f 'getty.*ttyu1'`
+
+  Making sure the tty name matches what you started the getty on.
+
+When you know the port and speed that work, navigate to :menuselection:`System --> Settings --> Tunables`, and add two new settings as follows, adpating the address and speed as required for your hardware:
+
++---------+--------------------+------------------------------------------------------------+
+| Setting | Value              | Explanation                                                |
++=========+====================+============================================================+
+| Tunable | hw.uart.console    | Name of the sysctl to set                                  |
++---------+--------------------+------------------------------------------------------------+
+| Value   | io:0x2f8,br:115200 | Use the port with base address 0x2f8 and speed 19200 baud. |
+|         |                    | Change to match your hardware.                             |
++---------+--------------------+------------------------------------------------------------+
+
++---------+--------------------+------------------------------------------------------------+
+| Setting | Value              | Explanation                                                |
++=========+====================+============================================================+
+| Tunable | comconsole_port    | Name of environment variable to set                        |
++---------+--------------------+------------------------------------------------------------+
+| Value   | 0x2F8              | Use the port at base address 0x2F8 for the serial console. |
+|         |                    | Change to match your hardware.                             |
++---------+--------------------+------------------------------------------------------------+
+
+Reboot the firewall to apply the settings. You should see the boot process in a terminal connected to the relevant port.
+
+--------------------------------
+Connecting to the serial console
+--------------------------------
 
 On Unix-like systems, you can connect to the serial console using the ``screen`` program, with a baud rate of 115200.
 The device name can differ per system and per serial device. Examples of names are:
